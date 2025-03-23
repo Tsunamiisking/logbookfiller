@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { generateLogbookEntry } from "../utils/API"
 import { FaClipboard, FaBook, FaClock, FaMagic, FaSync } from "react-icons/fa"
 
 const MainSection = () => {
@@ -21,7 +22,7 @@ const MainSection = () => {
   ]
 
   // Mock function to simulate AI text generation
-  const generateText = () => {
+  const generateText = async () => {
     if (!keywords.trim()) {
       alert("Please enter at least one keyword")
       return
@@ -29,34 +30,25 @@ const MainSection = () => {
 
     setIsGenerating(true)
 
-    // Simulate API call delay
-    setTimeout(() => {
-      const keywordList = keywords
-        .split(",")
-        .map((k) => k.trim())
-        .join(", ")
-      const sampleText = `This is a generated ${entryType} entry based on your keywords: ${keywordList}. 
-      
-Today I worked on implementing several key features for our project. I focused primarily on ${keywordList}. The process involved researching best practices, collaborating with team members, and testing various approaches. I encountered some challenges with integration but managed to resolve them by applying the concepts we learned in class last week.
+      const keywordArray = keywords.split(",").map((kw) => kw.trim());
 
-Moving forward, I plan to expand on these concepts and explore how they can be applied to other aspects of our project. This experience has deepened my understanding of the subject matter and improved my problem-solving skills.`
-
-      setGeneratedText(sampleText)
-      setIsGenerating(false)
+      const entry = await generateLogbookEntry(keywordArray, entryType);
+      setGeneratedText(entry);
+      console.log(entry);
+      setIsGenerating(false);
 
       // Add to history
       setHistory((prev) => [
         {
           id: Date.now(),
-          keywords: keywords,
+          keywords,
           type: entryTypes.find((t) => t.id === entryType).name,
-          preview: sampleText.substring(0, 60) + "...",
+          preview: entry.substring(0, 60) + "...",
         },
         ...prev.slice(0, 4),
-      ])
-    }, 1500)
-  }
-
+      ]);
+   
+}
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedText)
     alert("Text copied to clipboard!")
@@ -181,3 +173,31 @@ Moving forward, I plan to expand on these concepts and explore how they can be a
 
 export default MainSection
 
+
+
+    // Simulate API call delay
+//     setTimeout(() => {
+//       const keywordList = keywords
+//         .split(",")
+//         .map((k) => k.trim())
+//         .join(", ")
+//       const sampleText = `This is a generated ${entryType} entry based on your keywords: ${keywordList}. 
+      
+// Today I worked on implementing several key features for our project. I focused primarily on ${keywordList}. The process involved researching best practices, collaborating with team members, and testing various approaches. I encountered some challenges with integration but managed to resolve them by applying the concepts we learned in class last week.
+
+// Moving forward, I plan to expand on these concepts and explore how they can be applied to other aspects of our project. This experience has deepened my understanding of the subject matter and improved my problem-solving skills.`
+
+//       setGeneratedText(sampleText)
+//       setIsGenerating(false)
+
+//       // Add to history
+//       setHistory((prev) => [
+//         {
+//           id: Date.now(),
+//           keywords: keywords,
+//           type: entryTypes.find((t) => t.id === entryType).name,
+//           preview: sampleText.substring(0, 60) + "...",
+//         },
+//         ...prev.slice(0, 4),
+//       ])
+//     }, 1500)
