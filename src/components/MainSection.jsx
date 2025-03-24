@@ -16,6 +16,7 @@ const MainSection = () => {
     const savedHistory =
       JSON.parse(localStorage.getItem("logbookHistory")) || [];
     setHistory(savedHistory);
+    console.log("Loaded history from localStorage:", savedHistory);
   }, []);
 
   const getFormattedDate = () => {
