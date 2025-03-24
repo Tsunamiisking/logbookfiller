@@ -1,15 +1,40 @@
-"use client"
-import { useState } from "react"
-import { generateLogbookEntry } from "../utils/API"
-import { FaClipboard, FaBook, FaClock, FaMagic, FaSync } from "react-icons/fa"
+"use client";
+import { useState, useEffect } from "react";
+import { generateLogbookEntry } from "../utils/API";
+import { FaClipboard, FaBook, FaClock, FaMagic, FaSync } from "react-icons/fa";
 
 const MainSection = () => {
-  const [keywords, setKeywords] = useState("")
-  const [entryType, setEntryType] = useState("daily")
-  const [wordCount, setWordCount] = useState(200)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedEntry, setGeneratedEntry] = useState(null)
-  const [history, setHistory] = useState([])
+  const [keywords, setKeywords] = useState("");
+  const [entryType, setEntryType] = useState("daily");
+  const [wordCount, setWordCount] = useState(100);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedEntry, setGeneratedEntry] = useState(null);
+  const [history, setHistory] = useState([]);
+
+  // Load history from localStorage on component mount
+  useEffect(() => {
+    const savedHistory =
+      JSON.parse(localStorage.getItem("logbookHistory")) || [];
+    setHistory(savedHistory);
+  }, []);
+
+  const getFormattedDate = () => {
+    const now = new Date();
+    return now.toLocaleString(); // Example: "3/24/2025, 10:30 AM"
+  };
+
+  // Function to save entry to local storage
+  const saveToHistory = (entryText) => {
+    const newEntry = {
+      id: Date.now(), // Unique ID based on timestamp
+      timestamp: getFormattedDate(),
+      text: entryText,
+    };
+
+    const updatedHistory = [newEntry, ...history]; // Add new entry at the top
+    setHistory(updatedHistory);
+    localStorage.setItem("logbookHistory", JSON.stringify(updatedHistory));
+  };
 
   const entryTypes = [
     { id: "daily", name: "Daily Activity" },
@@ -17,38 +42,39 @@ const MainSection = () => {
     { id: "reflection", name: "Reflection" },
     { id: "learning", name: "Learning Summary" },
     { id: "meeting", name: "Meeting Notes" },
-  ]
+  ];
 
   const copyToClipboard = () => {
     if (generatedEntry) {
-      navigator.clipboard.writeText(generatedEntry)
-      alert("Text copied to clipboard!")
+      navigator.clipboard.writeText(generatedEntry);
+      alert("Text copied to clipboard!");
     }
-  }
+  };
 
   const loadHistoryItem = (item) => {
-    setGeneratedEntry(item.fullEntry)
-    setKeywords(item.keywords)
-    setEntryType(entryTypes.find((t) => t.name === item.type)?.id || "daily")
-  }
+    setGeneratedEntry(item.fullEntry);
+    setKeywords(item.keywords);
+    setEntryType(entryTypes.find((t) => t.name === item.type)?.id || "daily");
+  };
 
   const generateText = async () => {
     if (!keywords.trim()) {
-      alert("Please enter at least one keyword")
-      return
+      alert("Please enter at least one keyword");
+      return;
     }
 
-    setIsGenerating(true)
-    setGeneratedEntry(null) // Clear previous entry
+    setIsGenerating(true);
+    setGeneratedEntry(null); // Clear previous entry
 
     try {
-      const keywordArray = keywords.split(",").map((kw) => kw.trim())
-      const entry = await generateLogbookEntry(keywordArray, entryType)
+      const keywordArray = keywords.split(",").map((kw) => kw.trim());
+      const entry = await generateLogbookEntry(keywordArray, entryType);
 
       if (entry) {
         // Ensure entry is a string
-        const entryText = Array.isArray(entry) ? entry.join(" ") : entry
-        setGeneratedEntry(entryText)
+        const entryText = Array.isArray(entry) ? entry.join(" ") : entry;
+        setGeneratedEntry(entryText);
+        saveToHistory(entryText); // Pass entryText to saveToHistory
 
         // Add to history with safe string handling
         setHistory((prev) => [
@@ -56,19 +82,22 @@ const MainSection = () => {
             id: Date.now(),
             keywords,
             type: entryTypes.find((t) => t.id === entryType)?.name || "Unknown",
-            preview: entryText.length > 60 ? `${entryText.substring(0, 60)}...` : entryText,
+            preview:
+              entryText.length > 60
+                ? `${entryText.substring(0, 60)}...`
+                : entryText,
             fullEntry: entryText,
           },
           ...prev.slice(0, 4),
-        ])
+        ]);
       }
     } catch (error) {
-      console.error("Generation error:", error)
-      alert("Failed to generate entry. Please try again.")
+      console.error("Generation error:", error);
+      alert("Failed to generate entry. Please try again.");
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
+  };
 
   return (
     <div className="main-section">
@@ -94,7 +123,11 @@ const MainSection = () => {
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="entryType">Entry Type</label>
-                <select id="entryType" value={entryType} onChange={(e) => setEntryType(e.target.value)}>
+                <select
+                  id="entryType"
+                  value={entryType}
+                  onChange={(e) => setEntryType(e.target.value)}
+                >
                   {entryTypes.map((type) => (
                     <option key={type.id} value={type.id}>
                       {type.name}
@@ -105,7 +138,11 @@ const MainSection = () => {
 
               <div className="form-group">
                 <label htmlFor="wordCount">Word Count</label>
-                <select id="wordCount" value={wordCount} onChange={(e) => setWordCount(Number(e.target.value))}>
+                <select
+                  id="wordCount"
+                  value={wordCount}
+                  onChange={(e) => setWordCount(Number(e.target.value))}
+                >
                   <option value={100}>Short (~100 words)</option>
                   <option value={200}>Medium (~200 words)</option>
                   <option value={400}>Long (~400 words)</option>
@@ -113,7 +150,11 @@ const MainSection = () => {
               </div>
             </div>
 
-            <button className="generate-btn" onClick={generateText} disabled={isGenerating}>
+            <button
+              className="generate-btn"
+              onClick={generateText}
+              disabled={isGenerating}
+            >
               {isGenerating ? (
                 <>
                   <FaSync className="icon spinning" /> Generating...
@@ -141,13 +182,21 @@ const MainSection = () => {
                 <div className="generated-text">
                   {generatedEntry
                     .split("\n")
-                    .map((line, index) => (line.trim() ? <p key={index}>{line}</p> : <br key={index} />))}
+                    .map((line, index) =>
+                      line.trim() ? (
+                        <p key={index}>{line}</p>
+                      ) : (
+                        <br key={index} />
+                      )
+                    )}
                 </div>
               ) : (
                 <div className="placeholder-text">
                   <FaBook className="big-icon" />
                   <p>Your generated logbook entry will appear here</p>
-                  <p className="hint">Enter keywords and click "Generate Entry" to start</p>
+                  <p className="hint">
+                    Enter keywords and click "Generate Entry" to start
+                  </p>
                 </div>
               )}
             </div>
@@ -165,9 +214,14 @@ const MainSection = () => {
                   <div className="history-content">
                     <span className="history-type">{item.type}</span>
                     <p className="history-preview">{item.preview}</p>
-                    <p className="history-keywords">Keywords: {item.keywords}</p>
+                    <p className="history-keywords">
+                      Keywords: {item.keywords}
+                    </p>
                   </div>
-                  <button className="history-load-btn" onClick={() => loadHistoryItem(item)}>
+                  <button
+                    className="history-load-btn"
+                    onClick={() => loadHistoryItem(item)}
+                  >
                     <FaSync className="icon" />
                   </button>
                 </div>
@@ -177,7 +231,7 @@ const MainSection = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default MainSection
+export default MainSection;
