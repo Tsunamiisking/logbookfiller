@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { generateLogbookEntry } from "../utils/API"
+import { testGetData } from "../utils/getDataTest"
 import { FaClipboard, FaBook, FaClock, FaMagic, FaSync } from "react-icons/fa"
 
 const MainSection = () => {
@@ -11,6 +12,8 @@ const MainSection = () => {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedText, setGeneratedText] = useState("")
   const [history, setHistory] = useState([])
+
+  // console.log(testGetData());
 
   // Sample entry types for logbook
   const entryTypes = [
@@ -39,13 +42,13 @@ const MainSection = () => {
 
       // Add to history
       setHistory((prev) => [
-        {
-          id: Date.now(),
-          keywords,
-          type: entryTypes.find((t) => t.id === entryType).name,
-          preview: entry.substring(0, 60) + "...",
-        },
-        ...prev.slice(0, 4),
+        // {
+        //   id: Date.now(),
+        //   keywords,
+        //   type: entryTypes.find((t) => t.id === entryType).name,
+        //   preview: entry.substring(0, 60) + "...",
+        // },
+        // ...prev.slice(0, 4),
       ]);
    
 }
