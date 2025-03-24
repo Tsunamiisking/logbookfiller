@@ -1,8 +1,6 @@
 "use client"
-
 import { useState } from "react"
 import { generateLogbookEntry } from "../utils/API"
-import { testGetData } from "../utils/getDataTest"
 import { FaClipboard, FaBook, FaClock, FaMagic, FaSync } from "react-icons/fa"
 
 const MainSection = () => {
@@ -10,12 +8,9 @@ const MainSection = () => {
   const [entryType, setEntryType] = useState("daily")
   const [wordCount, setWordCount] = useState(200)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedText, setGeneratedText] = useState("")
+  const [generatedEntry, setGeneratedEntry] = useState(null)
   const [history, setHistory] = useState([])
 
-  // console.log(testGetData());
-
-  // Sample entry types for logbook
   const entryTypes = [
     { id: "daily", name: "Daily Activity" },
     { id: "project", name: "Project Update" },
@@ -24,7 +19,19 @@ const MainSection = () => {
     { id: "meeting", name: "Meeting Notes" },
   ]
 
-  // Mock function to simulate AI text generation
+  const copyToClipboard = () => {
+    if (generatedEntry) {
+      navigator.clipboard.writeText(generatedEntry)
+      alert("Text copied to clipboard!")
+    }
+  }
+
+  const loadHistoryItem = (item) => {
+    setGeneratedEntry(item.fullEntry)
+    setKeywords(item.keywords)
+    setEntryType(entryTypes.find((t) => t.name === item.type)?.id || "daily")
+  }
+
   const generateText = async () => {
     if (!keywords.trim()) {
       alert("Please enter at least one keyword")
@@ -32,29 +39,35 @@ const MainSection = () => {
     }
 
     setIsGenerating(true)
+    setGeneratedEntry(null) // Clear previous entry
 
-      const keywordArray = keywords.split(",").map((kw) => kw.trim());
+    try {
+      const keywordArray = keywords.split(",").map((kw) => kw.trim())
+      const entry = await generateLogbookEntry(keywordArray, entryType)
 
-      const entry = await generateLogbookEntry(keywordArray, entryType);
-      setGeneratedText(entry);
-      console.log(entry);
-      setIsGenerating(false);
+      if (entry) {
+        // Ensure entry is a string
+        const entryText = Array.isArray(entry) ? entry.join(" ") : entry
+        setGeneratedEntry(entryText)
 
-      // Add to history
-      setHistory((prev) => [
-        // {
-        //   id: Date.now(),
-        //   keywords,
-        //   type: entryTypes.find((t) => t.id === entryType).name,
-        //   preview: entry.substring(0, 60) + "...",
-        // },
-        // ...prev.slice(0, 4),
-      ]);
-   
-}
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedText)
-    alert("Text copied to clipboard!")
+        // Add to history with safe string handling
+        setHistory((prev) => [
+          {
+            id: Date.now(),
+            keywords,
+            type: entryTypes.find((t) => t.id === entryType)?.name || "Unknown",
+            preview: entryText.length > 60 ? `${entryText.substring(0, 60)}...` : entryText,
+            fullEntry: entryText,
+          },
+          ...prev.slice(0, 4),
+        ])
+      }
+    } catch (error) {
+      console.error("Generation error:", error)
+      alert("Failed to generate entry. Please try again.")
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   return (
@@ -116,19 +129,19 @@ const MainSection = () => {
           <div className="output-section">
             <div className="output-header">
               <h2>Generated Text</h2>
-              {generatedText && (
-                <button className="copy-btn" onClick={copyToClipboard}>
+              {generatedEntry && (
+                <button className="copy-btn" onClick={() => copyToClipboard()}>
                   <FaClipboard className="icon" /> Copy
                 </button>
               )}
             </div>
 
             <div className="output-content">
-              {generatedText ? (
+              {generatedEntry ? (
                 <div className="generated-text">
-                  {generatedText.split("\n").map((line, i) => (
-                    <p key={i}>{line}</p>
-                  ))}
+                  {generatedEntry
+                    .split("\n")
+                    .map((line, index) => (line.trim() ? <p key={index}>{line}</p> : <br key={index} />))}
                 </div>
               ) : (
                 <div className="placeholder-text">
@@ -154,14 +167,7 @@ const MainSection = () => {
                     <p className="history-preview">{item.preview}</p>
                     <p className="history-keywords">Keywords: {item.keywords}</p>
                   </div>
-                  <button
-                    className="history-load-btn"
-                    onClick={() => {
-                      setKeywords(item.keywords)
-                      setEntryType(entryTypes.find((t) => t.name === item.type).id)
-                      generateText()
-                    }}
-                  >
+                  <button className="history-load-btn" onClick={() => loadHistoryItem(item)}>
                     <FaSync className="icon" />
                   </button>
                 </div>
@@ -175,32 +181,3 @@ const MainSection = () => {
 }
 
 export default MainSection
-
-
-
-    // Simulate API call delay
-//     setTimeout(() => {
-//       const keywordList = keywords
-//         .split(",")
-//         .map((k) => k.trim())
-//         .join(", ")
-//       const sampleText = `This is a generated ${entryType} entry based on your keywords: ${keywordList}. 
-      
-// Today I worked on implementing several key features for our project. I focused primarily on ${keywordList}. The process involved researching best practices, collaborating with team members, and testing various approaches. I encountered some challenges with integration but managed to resolve them by applying the concepts we learned in class last week.
-
-// Moving forward, I plan to expand on these concepts and explore how they can be applied to other aspects of our project. This experience has deepened my understanding of the subject matter and improved my problem-solving skills.`
-
-//       setGeneratedText(sampleText)
-//       setIsGenerating(false)
-
-//       // Add to history
-//       setHistory((prev) => [
-//         {
-//           id: Date.now(),
-//           keywords: keywords,
-//           type: entryTypes.find((t) => t.id === entryType).name,
-//           preview: sampleText.substring(0, 60) + "...",
-//         },
-//         ...prev.slice(0, 4),
-//       ])
-//     }, 1500)
