@@ -17,7 +17,7 @@ const MainSection = () => {
       JSON.parse(localStorage.getItem("logbookHistory")) || [];
     setHistory(savedHistory);
     console.log("Loaded history from localStorage:", savedHistory);
-  }, []);
+  }, [generatedEntry]);
 
   const getFormattedDate = () => {
     const now = new Date();
@@ -30,6 +30,8 @@ const MainSection = () => {
       id: Date.now(), // Unique ID based on timestamp
       timestamp: getFormattedDate(),
       text: entryText,
+      type: entryType,
+      keywords
     };
 
     const updatedHistory = [newEntry, ...history]; // Add new entry at the top
@@ -204,7 +206,7 @@ const MainSection = () => {
           </div>
         </div>
 
-        {history.length > 0 && (
+        {history && (
           <div className="history-section">
             <h2>
               <FaClock className="icon" /> Recent Generations
@@ -214,7 +216,7 @@ const MainSection = () => {
                 <div key={item.id} className="history-item">
                   <div className="history-content">
                     <span className="history-type">{item.type}</span>
-                    <p className="history-preview">{item.preview}</p>
+                    {/* <p className="history-preview">{item.text}</p> */}
                     <p className="history-keywords">
                       Keywords: {item.keywords}
                     </p>
